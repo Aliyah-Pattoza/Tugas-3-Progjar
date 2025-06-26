@@ -1,0 +1,81 @@
+# FILE SERVER PROTOCOL
+
+## TUJUAN
+Melayani client dalam request file server dengan kemampuan upload, download, list, dan delete file.
+
+## ATURAN PROTOKOL
+- Client harus mengirimkan request dalam bentuk string
+- String harus dalam format: `REQUEST spasi PARAMETER`
+- PARAMETER dapat berkembang menjadi `PARAMETER1 spasi PARAMETER2` dan seterusnya
+- Semua komunikasi diakhiri dengan delimiter `\r\n\r\n`
+
+## REQUEST YANG DILAYANI
+
+### Informasi Umum
+* Jika request tidak dikenali akan menghasilkan pesan:
+  - status: ERROR
+  - data: request tidak dikenali
+* Semua result akan diberikan dalam bentuk JSON dan diakhiri dengan character ascii code #13#10#13#10 atau "\r\n\r\n"
+
+### LIST
+* **TUJUAN**: Untuk mendapatkan daftar seluruh file yang dilayani oleh file server
+* **PARAMETER**: Tidak ada
+* **RESULT**:
+  - **BERHASIL**:
+    - status: OK
+    - data: list file (array nama file)
+  - **GAGAL**:
+    - status: ERROR
+    - data: pesan kesalahan
+
+### GET
+* **TUJUAN**: Untuk mendapatkan isi file dengan menyebutkan nama file dalam parameter
+* **PARAMETER**:
+  - PARAMETER1: nama file
+* **RESULT**:
+  - **BERHASIL**:
+    - status: OK
+    - data_namafile: nama file yang diminta
+    - data_file: isi file yang diminta (dalam bentuk base64)
+  - **GAGAL**:
+    - status: ERROR
+    - data: pesan kesalahan
+
+### UPLOAD
+* **TUJUAN**: Untuk mengunggah file ke server dengan menyertakan nama file dan konten file
+* **PARAMETER**:
+  - PARAMETER1: nama file
+  - PARAMETER2: konten file dalam format base64
+* **RESULT**:
+  - **BERHASIL**:
+    - status: OK
+    - data: pesan konfirmasi upload berhasil
+  - **GAGAL**:
+    - status: ERROR
+    - data: pesan kesalahan (file tidak valid, konten base64 error, parameter kurang, dll)
+
+### DELETE
+* **TUJUAN**: Untuk menghapus file dari server dengan menyebutkan nama file
+* **PARAMETER**:
+  - PARAMETER1: nama file yang akan dihapus
+* **RESULT**:
+  - **BERHASIL**:
+    - status: OK
+    - data: pesan konfirmasi file berhasil dihapus
+  - **GAGAL**:
+    - status: ERROR
+    - data: pesan kesalahan (file tidak ditemukan, nama file tidak valid, dll)
+
+## KEAMANAN DAN VALIDASI
+- Server melakukan validasi nama file untuk mencegah path traversal attack
+- Semua file disimpan dalam direktori khusus (files/) untuk isolasi
+- Konten file dikodekan dalam base64 untuk memastikan integritas data binary
+- Error handling yang komprehensif untuk berbagai skenario kegagalan
+
+## CONTOH PENGGUNAAN
+```
+LIST
+GET dokumen.pdf  
+UPLOAD foto.jpg /9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAYEBQYFBAYGBQ...
+DELETE laporan.docx
+```
